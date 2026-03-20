@@ -1,1 +1,13 @@
+# DB environment variables
 .env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Data
+data/landing/business_licences/*.json
+data/landing/crime/*.json
+data/landing/local_areas/*.json
+data/landing/property_tax_report/*.json
