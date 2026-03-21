@@ -27,7 +27,7 @@ VPD_CSV_URL = "https://geodash.vpd.ca/opendata/crimedata_download/crimedata_csv_
 
 
 def create_landing_directory():
-    """Create the landing directory if it does not already exist."""
+    """Create the landing directory if it does not already exist"""
     if not os.path.exists(LANDING_DIR):
         os.makedirs(LANDING_DIR)
         logging.info(f"Created landing directory: {LANDING_DIR}")
@@ -35,10 +35,10 @@ def create_landing_directory():
 
 def fetch_all_crime_data():
     """
-    Fetch ALL crime records from the VPD GeoDASH CSV endpoint.
+    Fetch ALL crime records from the VPD GeoDASH CSV endpoint
 
     Returns:
-        pd.DataFrame or None: The ingested DataFrame, or None on error.
+        pd.DataFrame or None: The ingested DataFrame, or None on error
     """
     logging.info("Connecting to VPD GeoDASH to download full crime dataset...")
 
@@ -46,13 +46,13 @@ def fetch_all_crime_data():
         # Download the complete CSV directly into a Pandas DataFrame
         # This file contains data from 2003 to present and may take a few seconds
         df = pd.read_csv(VPD_CSV_URL)
-        logging.info(f"Downloaded {len(df)} crime records from VPD GeoDASH.")
+        logging.info(f"Downloaded {len(df)} crime records from VPD GeoDASH")
 
         # Normalize column names to lowercase for PostgreSQL compatibility
         df.columns = [col.lower() for col in df.columns]
 
         # Add audit columns for data lineage
-        df['created_by'] = 'python_full_load_job'
+        df['created_by'] = 'system'
         df['ingested_dt'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         # Save as JSON file(s), auto-splitting if record count exceeds threshold
@@ -67,7 +67,10 @@ def fetch_all_crime_data():
 def run():
     """Entry point for the crime data ingestion pipeline."""
     create_landing_directory()
-    fetch_all_crime_data()
+    df = fetch_all_crime_data()
+    if df is None:
+        raise Exception("Crime Data ingestion failed")
+    return df
 
 
 if __name__ == "__main__":

@@ -23,15 +23,15 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 # Landing directory for raw ingested data
 LANDING_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "data", "landing", "property_tax_report")
 
-# Base URL for the Vancouver Open Data Explore API v2.1
-BASE_URL = "https://opendata.vancouver.ca/api/explore/v2.1/catalog/datasets"
+# CSV export URL for the Property Tax Report dataset
+API_EXPORT_URL = "https://opendata.vancouver.ca/api/explore/v2.1/catalog/datasets/property-tax-report/exports/csv?delimiter=%2C"
 
 # Dataset configuration
 DATASET_ID = "property-tax-report"
 
 
 def create_landing_directory():
-    """Create the landing directory if it does not already exist."""
+    """Create the landing directory if it does not already exist"""
     if not os.path.exists(LANDING_DIR):
         os.makedirs(LANDING_DIR)
         logging.info(f"Created landing directory: {LANDING_DIR}")
@@ -39,70 +39,44 @@ def create_landing_directory():
 
 def fetch_all_property_tax():
     """
-    Fetch ALL property tax report records from the Vancouver Open Data API.
+    Fetch ALL property tax report records from the Vancouver Open Data API
 
     Returns:
-        pd.DataFrame or None: The ingested DataFrame, or None if no data.
+        pd.DataFrame or None: The ingested DataFrame, or None if no data
     """
     logging.info("Starting full load of Property Tax Report dataset...")
 
-    all_records = []
-    limit = -1  
-    offset = 0
+    logging.info("Downloading full Property Tax Report dataset from API...")
 
-    while True:
-        url = f"{BASE_URL}/{DATASET_ID}/records"
+    try:
+        # Pandas can read directly from a URL that returns CSV
+        df = pd.read_csv(API_EXPORT_URL, sep=',')
+        logging.info(f"Downloaded {len(df)} property tax records")
 
-        # Set query parameters: full load from report year 1900 onward
-        params = {
-            "limit": limit,
-            "offset": offset
-        }
+        # Ensure we only keep records from 1900 onward, though the dataset usually starts later
+        if 'report_year' in df.columns:
+            df = df[df['report_year'] >= 1900]
+            logging.info(f"Filtered to {len(df)} records (report_year >= 1900)")
 
-        try:
-            response = requests.get(url, params=params)
-            response.raise_for_status()
-            data = response.json()
+        # Add audit columns for data lineage
+        df['created_by'] = 'system'
+        df['ingested_dt'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-            # Extract the records list from the API response
-            records = data.get("results", [])
-            if not records:
-                break  # No more records to fetch
+        # Save as JSON file(s), auto-splitting if record count exceeds threshold
+        save_as_split_json(df, LANDING_DIR, "property_tax_report")
+        return df
 
-            all_records.extend(records)
-            offset += limit
-            logging.info(f"Fetched {len(all_records)} records so far (offset={offset})...")
-
-            # If fewer records returned than the limit, we've reached the last page
-            if len(records) < limit:
-                break
-
-            if all_records:
-                df = pd.DataFrame(all_records)
-
-                # Add audit columns for data lineage
-                df['created_by'] = 'python_full_load_job'
-                df['ingested_dt'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-                # Save as JSON file(s), auto-splitting if record count exceeds threshold
-                save_as_split_json(df, LANDING_DIR, "property_tax_report")
-                return df
-            else:
-                logging.warning("No Property Tax Report records were fetched.")
-                return None
-
-        except requests.exceptions.RequestException as e:
-            logging.error(f"API error while fetching Property Tax Report at offset {offset}: {e}")
-            break
-
-
-
+    except Exception as e:
+        logging.error(f"Error during Property Tax ingestion: {e}")
+        return None
 
 def run():
-    """Entry point for the property tax report ingestion pipeline."""
+    """Entry point for the property tax report ingestion pipeline"""
     create_landing_directory()
-    fetch_all_property_tax()
-
+    df = fetch_all_property_tax()
+    if df is None:
+        raise Exception("Property Tax ingestion failed")
+    return df
 
 if __name__ == "__main__":
     run()

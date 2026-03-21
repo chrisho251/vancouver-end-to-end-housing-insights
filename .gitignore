@@ -1,5 +1,6 @@
 # DB environment variables
 .env
+*.md
 
 # Python
 __pycache__/
@@ -11,3 +12,4 @@ data/landing/business_licences/*.json
 data/landing/crime/*.json
 data/landing/local_areas/*.json
 data/landing/property_tax_report/*.json
+data/staging/*.csv
