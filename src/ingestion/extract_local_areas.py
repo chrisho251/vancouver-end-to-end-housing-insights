@@ -27,7 +27,7 @@ API_EXPORT_URL = "https://opendata.vancouver.ca/api/explore/v2.1/catalog/dataset
 
 
 def create_landing_directory():
-    """Create the landing directory if it does not already exist."""
+    """Create the landing directory if it does not already exist"""
     if not os.path.exists(LANDING_DIR):
         os.makedirs(LANDING_DIR)
         logging.info(f"Created landing directory: {LANDING_DIR}")
@@ -35,20 +35,20 @@ def create_landing_directory():
 
 def fetch_all_local_areas():
     """
-    Fetch ALL local area boundary records from the Vancouver Open Data API.
+    Fetch ALL local area boundary records from the Vancouver Open Data API
 
     Returns:
-        pd.DataFrame or None: The ingested DataFrame, or None on error.
+        pd.DataFrame or None: The ingested DataFrame, or None on error
     """
     logging.info("Downloading full Local Area Boundaries dataset from API...")
 
     try:
         # Pandas can read directly from a URL that returns CSV
         df = pd.read_csv(API_EXPORT_URL, sep=',')
-        logging.info(f"Downloaded {len(df)} local area records.")
+        logging.info(f"Downloaded {len(df)} local area records")
 
         # Add audit columns for data lineage
-        df['created_by'] = 'python_full_load_job'
+        df['created_by'] = 'system'
         df['ingested_dt'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         # Save as JSON file(s), auto-splitting if record count exceeds threshold
@@ -61,9 +61,12 @@ def fetch_all_local_areas():
 
 
 def run():
-    """Entry point for the local areas ingestion pipeline."""
+    """Entry point for the local areas ingestion pipeline"""
     create_landing_directory()
-    fetch_all_local_areas()
+    df = fetch_all_local_areas()
+    if df is None:
+        raise Exception("Local Areas ingestion failed")
+    return df
 
 
 if __name__ == "__main__":
