@@ -112,16 +112,5 @@ def main():
     if transformation_fail > 0:
         sys.exit(1)
 
-    # At this point, `transformed_dataframes` holds all the necessary DataFrames 
-    # to proceed to Step 3 (EDA) and Step 4 (ML Models).
-    
-    df_business = transformed_dataframes.get("Business Licences")
-    df_crime = transformed_dataframes.get("Crime Data")
-    df_local_areas = transformed_dataframes.get("Local Area Boundaries")
-    df_property_tax = transformed_dataframes.get("Property Tax Report")
-
-    return df_business, df_crime, df_local_areas, df_property_tax
-
-
 if __name__ == "__main__":
     main()
