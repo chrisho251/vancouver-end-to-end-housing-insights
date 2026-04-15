@@ -1,6 +1,5 @@
 # DB environment variables
 .env
-*.md
 
 # Python
 __pycache__/
