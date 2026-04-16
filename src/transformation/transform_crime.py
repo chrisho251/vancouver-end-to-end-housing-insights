@@ -91,7 +91,7 @@ def run() -> pd.DataFrame:
     
     # Save the cleaned data to the staging area for next pipeline steps
     save_staging_data(df_cleaned, STAGING_FILE)
-    logging.info(f"Crime Data transformation completed. Output shape: {df_cleaned.shape}")
+    logging.info(f" Crime Data transformation completed. Output shape: {df_cleaned.shape}")
     
     return df_cleaned
 
